@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Worker, Job } from "bullmq";
 import Redis from "ioredis";
 import chalk from "chalk";
@@ -74,6 +75,12 @@ exchangePostingWorker.on("stalled", (jobId) => {
 });
 exchangePostingWorker.on("error", (err) => {
   console.error(chalk.red("Worker encountered an error:"), err);
+});
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled Rejection:", reason);
 });
 
 process.on("SIGTERM", () => exchangePostingWorker.close());

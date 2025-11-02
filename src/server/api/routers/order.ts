@@ -12,7 +12,7 @@ export const orderRouter = createTRPCRouter({
 			return createOrders(input, redis);
 		}),
 
-		    getStatus: publicProcedure
+	getStatus: publicProcedure
         .input(z.object({ orderId: z.string() }))
         .query(async ({ input, ctx }) => {
             const { redis } = ctx;

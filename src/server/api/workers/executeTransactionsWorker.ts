@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Worker, Job } from "bullmq";
 import Redis from "ioredis";
 import chalk from "chalk";
