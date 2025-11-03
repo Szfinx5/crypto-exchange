@@ -8,6 +8,7 @@
 		"resolveJsonModule": true,
 		"moduleDetection": "force",
 		"isolatedModules": true,
+		"allowImportingTsExtensions": true,
 
 		/* Strictness */
 		"strict": true,
@@ -22,6 +23,7 @@
 		"jsx": "preserve",
 		"plugins": [{ "name": "next" }],
 		"incremental": true,
+		"types": ["vitest/globals"],
 
 		/* Path Aliases */
 		"baseUrl": ".",
