@@ -6,6 +6,7 @@ dotenv.config({ path: ".env.test" });
 
 export default defineConfig({
 	test: {
+		globals: true,
 		environment: "node",
 		setupFiles: ["./src/server/api/__tests__/testSetup.ts"],
 	},
@@ -16,4 +17,5 @@ export default defineConfig({
 			"@client": path.resolve(__dirname, "./src/app"),
 		},
 	},
+	define: {},
 });
