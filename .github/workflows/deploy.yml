@@ -26,6 +26,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Install SST dependencies
+        working-directory: infra
+        run: pnpm install
+
       - name: Deploy SST
         working-directory: infra
         run: pnpm exec sst deploy --stage prod
