@@ -1,15 +1,15 @@
+import Redis from "ioredis";
 import {
-  describe,
-  it,
-  expect,
-  beforeAll,
   afterAll,
+  beforeAll,
   beforeEach,
+  describe,
+  expect,
+  it,
   vi,
 } from "vitest";
-import Redis from "ioredis";
-import { exchangePostingQueue, executeTransactionsQueue } from "../lib/queue";
 import { env } from "~/env";
+import { exchangePostingQueue, executeTransactionsQueue } from "../lib/queue";
 
 vi.mock("../services/exchangeCalls/exchangePosting", () => ({
   createExchangePosting: vi.fn(),
@@ -81,7 +81,7 @@ describe("Message Queue Integration Flow", { timeout: 15000 }, () => {
     ]);
     const foundJob = jobs.find((j) => j.data.orderId === "order-test-1");
     expect(foundJob).toBeDefined();
-    expect(foundJob!.data.orderId).toBe("order-test-1");
+    expect(foundJob?.data.orderId).toBe("order-test-1");
   });
 
   it("should respect job options and retry configuration", async () => {
