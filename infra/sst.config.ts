@@ -1,5 +1,5 @@
 import { defineConfig } from "sst/config";
-import { App } from "sst/constructs";
+import type { App } from "sst/constructs";
 
 
 export default defineConfig({

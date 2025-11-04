@@ -1,5 +1,6 @@
-// filepath: infra/stacks/AppStack.ts
-import { StackContext, NextjsSite, Redis, Container } from "sst/constructs";
+import type { StackContext } from "sst/constructs";
+import { NextjsSite, Redis, Container } from "sst/constructs";
+
 
 export function AppStack({ stack }: StackContext) {
   // Redis Serverless
