@@ -3,24 +3,24 @@
  */
 
 import "@testing-library/jest-dom";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import OrderPage from "../page";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "~/trpc/react";
+import OrderPage from "../page";
 
 // Mock the api.order.create and api.order.getStatus hooks
 vi.mock("~/trpc/react", () => {
-  let statusData: any = null;
-  let onSuccess: any = null;
-  let onError: any = null;
+  let statusData: { status: string } | null = null;
+  let onSuccess: ((data: { order: { id: string } }) => void) | null = null;
+  let onError: ((error: { message: string }) => void) | null = null;
 
   return {
     api: {
       order: {
         create: {
           useMutation: vi.fn(() => ({
-            mutate: (values: any) => {
+            mutate: (values: Record<string, unknown>) => {
               setTimeout(() => {
                 if (onSuccess) onSuccess({ order: { id: "order123" } });
                 if (onError) onError({ message: "Order creation failed" });
@@ -30,10 +30,10 @@ vi.mock("~/trpc/react", () => {
             isError: false,
             error: null,
             isSuccess: false,
-            onSuccess: (cb: any) => {
+            onSuccess: (cb: (data: { order: { id: string } }) => void) => {
               onSuccess = cb;
             },
-            onError: (cb: any) => {
+            onError: (cb: (error: { message: string }) => void) => {
               onError = cb;
             },
           })),
@@ -46,7 +46,7 @@ vi.mock("~/trpc/react", () => {
         },
       },
       // Expose setters for test control
-      __setStatusData: (data: any) => {
+      __setStatusData: (data: { status: string } | null) => {
         statusData = data;
       },
       __reset: () => {

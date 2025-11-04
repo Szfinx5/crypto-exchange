@@ -20,6 +20,9 @@
 		"enabled": true,
 		"rules": {
 			"recommended": true,
+			"suspicious": {
+				"noExplicitAny": "warn"
+			},
 			"correctness": {
 				"noChildrenProp": "off"
 			}
