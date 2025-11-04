@@ -27,6 +27,7 @@ jobs:
         run: pnpm install
 
       - name: Deploy SST
+        working-directory: infra
         run: pnpm exec sst deploy --stage prod
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
