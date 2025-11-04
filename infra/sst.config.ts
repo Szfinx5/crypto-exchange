@@ -1,9 +1,5 @@
-import { defineConfig } from "sst/config";
-import type { App } from "sst/constructs";
-
-
-export default defineConfig({
-  stacks: (app: App) => {
+export default {
+  stacks: async (app) => {
     app.stack("AppStack");
   },
-});
+};
