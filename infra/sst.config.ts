@@ -1,5 +1,6 @@
 export default {
   stacks: async (app) => {
-    app.stack("AppStack");
+    const { AppStack } = await import("./stacks/AppStack.js");
+    app.stack(AppStack);
   },
 };
