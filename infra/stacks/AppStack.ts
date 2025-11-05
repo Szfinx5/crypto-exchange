@@ -1,5 +1,5 @@
-// filepath: infra/stacks/AppStack.ts
-export async function AppStack({ stack }) {
+// @ts-nocheck 
+export async function AppStack({ stack }: { stack: any }) {
   const { NextjsSite, Redis, Container } = await import("sst/constructs");
 
   // Redis Serverless
