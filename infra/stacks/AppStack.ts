@@ -7,7 +7,7 @@ export async function AppStack({ stack }) {
 
   // Next.js app
   const site = new NextjsSite(stack, "NextSite", {
-    path: "../../",
+    path: "../",
     environment: {
       QUEUE_REDIS_URL: redis.clusterEndpoint,
       STATUS_REDIS_URL: redis.clusterEndpoint,
@@ -16,7 +16,7 @@ export async function AppStack({ stack }) {
 
   // ECS Fargate worker containers
   const exchangeWorker = new Container(stack, "ExchangeWorker", {
-    image: "../../src/server/api/workers/Dockerfile",
+    image: "../src/server/api/workers/Dockerfile",
     environment: {
       QUEUE_REDIS_URL: redis.clusterEndpoint,
       STATUS_REDIS_URL: redis.clusterEndpoint,
@@ -41,6 +41,5 @@ export async function AppStack({ stack }) {
     SiteUrl: site.url,
     RedisEndpoint: redis.clusterEndpoint,
     ExchangeWorkerUrl: exchangeWorker.url,
-    ExecuteWorkerUrl: executeWorker.url,
   });
 }
