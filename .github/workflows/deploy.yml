@@ -34,7 +34,7 @@ jobs:
         working-directory: infra
         run: |
           pnpm exec sst version
-          pnpm exec sst deploy --stage prod
+          pnpm exec sst deploy --stage prod --config ./sst.config.ts
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
