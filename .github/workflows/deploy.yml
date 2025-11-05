@@ -31,7 +31,6 @@ jobs:
         run: ls -la infra/
 
       - name: Deploy SST
-        working-directory: infra
         run: |
            pnpm exec sst version
            pnpm exec sst deploy --stage prod
