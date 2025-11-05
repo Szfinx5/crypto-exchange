@@ -1,5 +1,5 @@
 // @ts-nocheck 
-export async function AppStack({ stack }: { stack: any }) {
+export async function AppStack({ stack }) {
   const { NextjsSite, Redis, Container } = await import("sst/constructs");
 
   // Redis Serverless
@@ -7,16 +7,16 @@ export async function AppStack({ stack }: { stack: any }) {
 
   // Next.js app
   const site = new NextjsSite(stack, "NextSite", {
-    path: "../",
+    path: "./",
     environment: {
       QUEUE_REDIS_URL: redis.clusterEndpoint,
       STATUS_REDIS_URL: redis.clusterEndpoint,
     },
   });
 
-  // ECS Fargate worker containers
+  // ECS Fargate worker container
   const exchangeWorker = new Container(stack, "ExchangeWorker", {
-    image: "../src/server/api/workers/Dockerfile",
+    image: "./src/server/api/workers/Dockerfile",
     environment: {
       QUEUE_REDIS_URL: redis.clusterEndpoint,
       STATUS_REDIS_URL: redis.clusterEndpoint,
@@ -25,17 +25,6 @@ export async function AppStack({ stack }: { stack: any }) {
     memory: "512",
     desiredCount: 1,
   });
-
-  // const executeWorker = new Container(stack, "ExecuteWorker", {
-  //   image: "../../src/server/api/workers/executeWorker.Dockerfile",
-  //   environment: {
-  //     QUEUE_REDIS_URL: redis.clusterEndpoint,
-  //     STATUS_REDIS_URL: redis.clusterEndpoint,
-  //   },
-  //   cpu: "256",
-  //   memory: "512",
-  //   desiredCount: 1,
-  // });
 
   stack.addOutputs({
     SiteUrl: site.url,
