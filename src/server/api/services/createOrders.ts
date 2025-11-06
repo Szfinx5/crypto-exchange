@@ -6,8 +6,20 @@ import type { Redis } from "ioredis";
 import { createExchangePostingRequest } from "../lib/api/createExchangePostRequest";
 import { exchangePostingQueue } from "../lib/queue";
 
+function getRandomUUID() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  // Fallback: RFC4122 version 4 compliant UUID
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0,
+      v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 export const createOrders = async (input: OrderInput, redis: Redis) => {
-	const id = crypto.randomUUID();
+	const id = getRandomUUID();
 	const order: Order = { ...input, id, type: "market" };
 	const status = Status.PENDING;
 	await setOrderStatus(id, status, redis);
