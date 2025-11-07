@@ -1,0 +1,17 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache python3 make g++ curl
+
+COPY package.json pnpm-lock.yaml ./
+RUN npm install -g pnpm concurrently && pnpm install --frozen-lockfile
+
+COPY . .
+
+RUN pnpm build
+
+EXPOSE 3000
+
+# Start both Next.js and workers
+CMD ["concurrently", "--kill-others", "--names", "next,worker", "pnpm start", "pnpm run workers"]
