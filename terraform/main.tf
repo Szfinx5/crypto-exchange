@@ -1,4 +1,3 @@
-# filepath: /home/gabor/Code/Practice/Apex/crypto-exchange/terraform/main.tf
 terraform {
   required_version = ">= 1.0"
   required_providers {
@@ -85,7 +84,7 @@ resource "aws_security_group" "app" {
   name_prefix = "crypto-exchange-"
   vpc_id      = aws_vpc.main.id
 
-  # HTTP access for Next.js
+  # HTTP access for app
   ingress {
     description = "HTTP"
     from_port   = 80
@@ -94,7 +93,16 @@ resource "aws_security_group" "app" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Next.js dev port
+  # Status page
+  ingress {
+    description = "Status page"
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Next.js dev port (optional)
   ingress {
     description = "Next.js"
     from_port   = 3000
@@ -192,7 +200,7 @@ resource "aws_instance" "app" {
     encrypted   = true
   }
 
-  user_data = base64encode(templatefile("${path.module}/user_data.sh", {
+  user_data = templatefile("${path.module}/user_data.sh", {
     docker_compose_content = base64encode(file("${path.module}/docker-compose.prod.yml"))
     env_content = base64encode(templatefile("${path.module}/.env.prod", {
       redis_url = "redis://redis:6379"
@@ -200,7 +208,7 @@ resource "aws_instance" "app" {
     github_repo    = var.github_repo
     log_group_name = aws_cloudwatch_log_group.user_data_logs.name
     aws_region     = var.aws_region
-  }))
+  })
 
   tags = {
     Name = "crypto-exchange-app"
