@@ -47,3 +47,11 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Build app
+        env:
+          STATUS_REDIS_URL: "redis://localhost:6379"
+          QUEUE_REDIS_URL: "redis://localhost:6379"
+          EXCHANGE_HOST: "http://localhost:3000"
+          NEXT_PUBLIC_WEBSOCKET_CONNECTION_STRING: "ws://localhost:3001"
+        run: pnpm build
