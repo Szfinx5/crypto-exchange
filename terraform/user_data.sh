@@ -36,6 +36,11 @@ cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<EOF
                         "file_path": "/var/log/user-data.log",
                         "log_group_name": "${log_group_name}",
                         "log_stream_name": "user-data-$(curl -s http://169.254.169.254/latest/meta-data/instance-id)"
+                    },
+                     {
+                        "file_path": "/var/log/update-deployment.log",
+                        "log_group_name": "${log_group_name}",
+                        "log_stream_name": "update-deployment-$(curl -s http://169.254.169.254/latest/meta-data/instance-id)"
                     }
                 ]
             }
