@@ -48,7 +48,7 @@ jobs:
       - name: Test
         run: pnpm test
 
-        - name: Build app
+      - name: Build app
         env:
           STATUS_REDIS_URL: "redis://localhost:6379"
           QUEUE_REDIS_URL: "redis://localhost:6379"
