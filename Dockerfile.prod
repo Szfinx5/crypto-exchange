@@ -9,6 +9,12 @@ RUN npm install -g pnpm concurrently && pnpm install --frozen-lockfile
 
 COPY . .
 
+ENV NODE_ENV=production
+ENV STATUS_REDIS_URL=redis://redis:6379/0
+ENV QUEUE_REDIS_URL=redis://redis:6379/1
+ENV EXCHANGE_HOST=https://exchange.apexlab.dev
+ENV NEXT_PUBLIC_WEBSOCKET_CONNECTION_STRING=wss://streamer.cryptocompare.com/v2?api_key=92552f6adceacee65447af2bf869b66122fd27ea079b4df7432ff005fb559a32
+
 RUN pnpm build
 
 EXPOSE 3000
