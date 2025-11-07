@@ -61,5 +61,10 @@ jobs:
         aws ssm send-command \
           --document-name "AWS-RunShellScript" \
           --targets "Key=tag:Name,Values=crypto-exchange-app" \
-          --parameters 'commands=["/app/update-deployment.sh"]' \
+          --parameters 'commands=[
+            "cd /app",
+            "docker-compose pull >> /var/log/update-deployment.log 2>&1",
+            "docker-compose up -d >> /var/log/update-deployment.log 2>&1",
+            "echo \"=== Update complete: $(date) ===\" >> /var/log/update-deployment.log"
+          ]' \
           --region ${{ env.AWS_REGION }}
