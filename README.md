@@ -4,6 +4,35 @@ Order processing system for cryptocurrency exchanges — featuring asynchronous 
 
 ---
 
+## Live Demo
+
+**Working Demo:** [http://63.180.145.4](http://63.180.145.4)
+
+## Quick Start: Deploy Your Own
+
+You can deploy your own version by following the next few steps:
+
+```bash
+# Clone the repository
+git clone https://github.com/Szfinx5/crypto-exchange.git
+cd crypto-exchange/terraform
+
+# Initialize and deploy with Terraform
+terraform init
+terraform apply
+
+# After deployment completes, check the console output for your URL
+# Example output: "site_url = http://YOUR-INSTANCE-IP"
+```
+
+**Requirements:**
+- AWS CLI configured with valid credentials
+- Terraform installed
+
+The deployment creates a complete AWS infrastructure (VPC, EC2, security groups, etc.) and automatically sets up the application with Docker Compose.
+
+---
+
 ## Table of Contents
 
 1. [Background: The Original Problem](#background-the-original-problem)  
