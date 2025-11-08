@@ -149,7 +149,7 @@ export default function OrderPage() {
 
   return (
     <div className="font-mono text-green-400">
-      <h1 className="text-xl mb-4 text-yellow-400">Place Order</h1>
+      <h1 className="text-xl mb-4 text-yellow-400">Place Your Order</h1>
       <form
         onSubmit={(e) => {
           e.preventDefault();
