@@ -63,8 +63,13 @@ jobs:
           --targets "Key=tag:Name,Values=crypto-exchange-app" \
           --parameters 'commands=[
             "cd /app",
-            "docker-compose pull >> /var/log/update-deployment.log 2>&1",
-            "docker-compose up -d >> /var/log/update-deployment.log 2>&1",
+            "echo \"=== Starting deployment: $(date) ===\" >> /var/log/update-deployment.log",
+            "echo \"New image: ${{ needs.build-and-push.outputs.image }}\" >> /var/log/update-deployment.log",
+            "docker-compose down >> /var/log/update-deployment.log 2>&1",
+            "docker image prune -f >> /var/log/update-deployment.log 2>&1",
+            "docker-compose pull --ignore-pull-failures >> /var/log/update-deployment.log 2>&1",
+            "docker-compose up -d --force-recreate >> /var/log/update-deployment.log 2>&1",
+            "docker ps >> /var/log/update-deployment.log 2>&1",
             "echo \"=== Update complete: $(date) ===\" >> /var/log/update-deployment.log"
           ]' \
           --region ${{ env.AWS_REGION }}
