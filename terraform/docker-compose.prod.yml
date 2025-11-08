@@ -31,6 +31,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    volumes:
+      - /var/log/worker.log:/var/log/worker.log
     networks:
       - crypto-network
 
