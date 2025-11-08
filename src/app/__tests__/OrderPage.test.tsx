@@ -105,20 +105,23 @@ describe("OrderPage", () => {
     );
 
     // Mock order creation mutation
-    vi.mocked(api.order.create.useMutation).mockReturnValue({
-      mutate: vi.fn((data) => {
-        // Immediately trigger onSuccess
-        const options = vi.mocked(api.order.create.useMutation).mock
-          .calls[0]?.[0];
-        if (options?.onSuccess) {
-          setTimeout(() => options.onSuccess({ order: { id: "order123" } }), 0);
-        }
-      }),
-      isPending: false,
-      isError: false,
-      error: null,
-      isSuccess: false,
-    } as any);
+    vi.mocked(api.order.create.useMutation).mockImplementation(
+      (options?: any) =>
+        ({
+          mutate: vi.fn((variables) => {
+            // Trigger success immediately with all required parameters
+            if (options?.onSuccess) {
+              setTimeout(() => {
+                options.onSuccess({ order: { id: "order123" } }, variables, {});
+              }, 0);
+            }
+          }),
+          isPending: false,
+          isError: false,
+          error: null,
+          isSuccess: false,
+        } as any)
+    );
 
     // Mock status query to return FAILED
     vi.mocked(api.order.getStatus.useQuery).mockReturnValue({
