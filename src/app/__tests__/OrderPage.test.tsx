@@ -6,84 +6,137 @@ import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { api } from "~/trpc/react";
 import OrderPage from "../page";
 
-// Mock the api.order.create and api.order.getStatus hooks
-vi.mock("~/trpc/react", () => {
-  let statusData: { status: string } | null = null;
-  let onSuccess: ((data: { order: { id: string } }) => void) | null = null;
-  let onError: ((error: { message: string }) => void) | null = null;
-
-  return {
-    api: {
-      order: {
-        create: {
-          useMutation: vi.fn(() => ({
-            mutate: (values: Record<string, unknown>) => {
-              setTimeout(() => {
-                if (onSuccess) onSuccess({ order: { id: "order123" } });
-                if (onError) onError({ message: "Order creation failed" });
-              }, 0);
-            },
-            isPending: false,
-            isError: false,
-            error: null,
-            isSuccess: false,
-            onSuccess: (cb: (data: { order: { id: string } }) => void) => {
-              onSuccess = cb;
-            },
-            onError: (cb: (error: { message: string }) => void) => {
-              onError = cb;
-            },
-          })),
-        },
-        getStatus: {
-          useQuery: vi.fn(() => ({
-            data: statusData,
-            refetch: vi.fn(),
-          })),
-        },
+// Mock the entire TRPC module
+vi.mock("~/trpc/react", () => ({
+  api: {
+    order: {
+      create: {
+        useMutation: vi.fn(),
       },
-      // Expose setters for test control
-      __setStatusData: (data: { status: string } | null) => {
-        statusData = data;
-      },
-      __reset: () => {
-        statusData = null;
-        onSuccess = null;
-        onError = null;
+      getStatus: {
+        useQuery: vi.fn(),
       },
     },
-  };
-});
+  },
+}));
+
+// Import the mocked api after the mock is set up
+import { api } from "~/trpc/react";
 
 describe("OrderPage", () => {
   beforeEach(() => {
-    (api as any).__reset();
     vi.clearAllMocks();
   });
 
-  it("shows success message for successful order", async () => {
-    (api as any).__setStatusData({ status: "COMPLETED" });
+  it("shows completion message when order succeeds and status is completed", async () => {
+    let onSuccessCallback:
+      | ((data: any, variables: any, context: any) => void)
+      | null = null;
+
+    // Mock order creation mutation
+    vi.mocked(api.order.create.useMutation).mockImplementation(
+      (options?: any) =>
+        ({
+          mutate: vi.fn((variables) => {
+            // Store the callback when mutation is created
+            if (options?.onSuccess) {
+              onSuccessCallback = options.onSuccess;
+              // Trigger success immediately
+              setTimeout(() => {
+                onSuccessCallback?.(
+                  { order: { id: "order123" } },
+                  variables,
+                  {}
+                );
+              }, 0);
+            }
+          }),
+          isPending: false,
+          isError: false,
+          error: null,
+          isSuccess: false,
+        } as any)
+    );
+
+    // Mock status query to return COMPLETED
+    vi.mocked(api.order.getStatus.useQuery).mockReturnValue({
+      data: { status: "COMPLETED" },
+      refetch: vi.fn(),
+    } as any);
 
     render(<OrderPage />);
+
     fireEvent.click(screen.getByText(/\$ submit_order/i));
 
+    // Wait for the completion message
     await waitFor(() => {
-      expect(screen.getByText(/Order completed!/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/\(ID: order123\) Order completed!/i)
+      ).toBeInTheDocument();
     });
   });
 
-  it("shows retry message for failed order", async () => {
-    (api as any).__setStatusData({ status: "FAILED" });
+  it("shows retry message when order succeeds but status is failed", async () => {
+    let onErrorCallback:
+      | ((error: any, variables: any, context: any) => void)
+      | null = null;
+
+    // Mock order creation mutation with error
+    vi.mocked(api.order.create.useMutation).mockImplementation(
+      (options?: any) =>
+        ({
+          mutate: vi.fn((variables) => {
+            // Store the callback when mutation is created
+            if (options?.onError) {
+              onErrorCallback = options.onError;
+              // Trigger error immediately
+              setTimeout(() => {
+                onErrorCallback?.({ message: "Network error" }, variables, {});
+              }, 0);
+            }
+          }),
+          isPending: false,
+          isError: false,
+          error: null,
+          isSuccess: false,
+        } as any)
+    );
+
+    // Mock order creation mutation
+    vi.mocked(api.order.create.useMutation).mockImplementation(
+      (options?: any) =>
+        ({
+          mutate: vi.fn((variables) => {
+            // Trigger success immediately with all required parameters
+            if (options?.onSuccess) {
+              setTimeout(() => {
+                options.onSuccess({ order: { id: "order123" } }, variables, {});
+              }, 0);
+            }
+          }),
+          isPending: false,
+          isError: false,
+          error: null,
+          isSuccess: false,
+        } as any)
+    );
+
+    // Mock status query to return FAILED
+    vi.mocked(api.order.getStatus.useQuery).mockReturnValue({
+      data: { status: "FAILED" },
+      refetch: vi.fn(),
+    } as any);
 
     render(<OrderPage />);
+
     fireEvent.click(screen.getByText(/\$ submit_order/i));
 
+    // Wait for the retry message
     await waitFor(() => {
       expect(
-        screen.getByText(/Order failed. Retrying.../i)
+        screen.getByText(/\(ID: order123\) Order failed\. Retrying\.\.\./i)
       ).toBeInTheDocument();
     });
   });

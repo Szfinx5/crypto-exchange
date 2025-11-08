@@ -17,7 +17,7 @@ services:
       - crypto-network
 
   app:
-    image: crypto-exchange-app:latest
+    image: public.ecr.aws/q2z8v3n8/crypto-exchange:latest
     container_name: crypto-exchange-app
     restart: unless-stopped
     ports:

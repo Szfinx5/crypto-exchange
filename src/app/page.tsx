@@ -1,6 +1,5 @@
 "use client";
 import { formOptions, useForm } from "@tanstack/react-form";
-import { skipToken } from "@tanstack/react-query";
 import { zodValidator } from "@tanstack/zod-form-adapter";
 import React from "react";
 import { useEffect, useState } from "react";
@@ -8,6 +7,13 @@ import { z } from "zod";
 import { type RouterInputs, api } from "~/trpc/react";
 
 type OrderFormValues = RouterInputs["order"]["create"];
+
+type OrderLog = {
+  id: string;
+  message: string;
+  status: "submitted" | "completed" | "failed" | "error";
+  polling: boolean;
+};
 
 function getRandomUUID() {
   if (
@@ -24,31 +30,61 @@ function getRandomUUID() {
   });
 }
 
-export default function OrderPage() {
-  const [output, setOutput] = useState<string[]>([]);
-  const [orderId, setOrderId] = useState<string | null>(null);
-  const [polling, setPolling] = useState(true);
-
-  const { data: statusData, refetch } = api.order.getStatus.useQuery(
-    orderId ? { orderId } : skipToken,
+// Individual order status tracker function
+function OrderStatusTracker({
+  orderId,
+  onStatusUpdate,
+}: {
+  orderId: string;
+  onStatusUpdate: (orderId: string, status: "completed" | "failed") => void;
+}) {
+  const { data: statusData } = api.order.getStatus.useQuery(
+    { orderId },
     {
-      refetchInterval: polling ? 2000 : false,
-      enabled: !!orderId,
+      refetchInterval: 2000,
+      enabled: true,
     }
   );
 
   useEffect(() => {
     if (statusData?.status === "COMPLETED") {
-      setOutput((prev) => [...prev, "Order completed!"]);
-      setPolling(false);
+      onStatusUpdate(orderId, "completed");
     } else if (statusData?.status === "FAILED") {
-      setOutput((prev) =>
-        prev[prev.length - 1] === "Order failed. Retrying..."
-          ? prev
-          : [...prev, "Order failed. Retrying..."]
-      );
+      onStatusUpdate(orderId, "failed");
     }
-  }, [statusData]);
+  }, [statusData, orderId, onStatusUpdate]);
+
+  return null;
+}
+
+export default function OrderPage() {
+  const [orders, setOrders] = useState<OrderLog[]>([]);
+
+  // Handle status updates for individual orders
+  const handleOrderStatusUpdate = (
+    orderId: string,
+    status: "completed" | "failed"
+  ) => {
+    setOrders((prev) =>
+      prev.map((order) => {
+        if (
+          order.id === orderId &&
+          (order.status === "submitted" || order.status === "failed")
+        ) {
+          return {
+            ...order,
+            status,
+            message:
+              status === "completed"
+                ? `(ID: ${orderId}) Order completed!`
+                : `(ID: ${orderId}) Order failed. Retrying...`,
+            polling: status !== "completed",
+          };
+        }
+        return order;
+      })
+    );
+  };
 
   const {
     mutate: createOrder,
@@ -58,12 +94,27 @@ export default function OrderPage() {
     isSuccess,
   } = api.order.create.useMutation({
     onSuccess: (data) => {
-      setOrderId(data.order.id);
-      setPolling(true);
-      setOutput((prev) => [...prev, "Order submitted successfully!"]);
+      console.log("Order created with ID:", data.order.id);
+      setOrders((prev) => [
+        ...prev,
+        {
+          id: data.order.id,
+          message: `(ID: ${data.order.id}) Order submitted successfully!`,
+          status: "submitted",
+          polling: true,
+        },
+      ]);
     },
     onError: (err) => {
-      setOutput((prev) => [...prev, `Error: ${err.message}`]);
+      setOrders((prev) => [
+        ...prev,
+        {
+          id: getRandomUUID(),
+          message: `Error: ${err.message}`,
+          status: "error",
+          polling: false,
+        },
+      ]);
     },
   });
 
@@ -81,9 +132,14 @@ export default function OrderPage() {
     ...formOpts,
     onSubmit: async (values) => {
       if (values.value.price === 0 || values.value.quantity === 0) {
-        setOutput((prev) => [
+        setOrders((prev) => [
           ...prev,
-          "Error: Price and quantity must be greater than 0",
+          {
+            id: getRandomUUID(),
+            message: "Error: Price and quantity must be greater than 0",
+            status: "error",
+            polling: false,
+          },
         ]);
         return;
       }
@@ -215,15 +271,20 @@ export default function OrderPage() {
         </button>
       </form>
 
-      {output.length > 0 && (
+      {orders.length > 0 && (
         <div className="mt-4 p-2 border border-green-400">
           <h2 className="text-yellow-400 mb-2">Output:</h2>
-          {output.map((line, index) => (
-            <div
-              key={`${line.slice(0, 10)}-${index}`}
-              className="text-green-400"
-            >
-              $ {line}
+          {orders.map((order, index) => (
+            <div key={order.id} className="text-green-400">
+              $ {order.message}
+              {/* Render status tracker only for submitted orders that are still polling */}
+              {(order.status === "submitted" || order.status === "failed") &&
+                order.polling && (
+                  <OrderStatusTracker
+                    orderId={order.id}
+                    onStatusUpdate={handleOrderStatusUpdate}
+                  />
+                )}
             </div>
           ))}
         </div>

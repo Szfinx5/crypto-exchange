@@ -35,7 +35,7 @@ output "debug_commands" {
     # Connect via Session Manager:
     aws ssm start-session --target ${aws_instance.app.id}
     
-    # Check status:
-    curl http://${aws_eip.app.public_ip}/status.html
+    # Check the site:
+    curl http://${aws_eip.app.public_ip}
   EOT
 }
