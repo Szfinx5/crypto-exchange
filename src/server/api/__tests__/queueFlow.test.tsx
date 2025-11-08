@@ -102,7 +102,7 @@ describe("Message Queue Integration Flow", { timeout: 15000 }, () => {
       jobData
     );
 
-    expect(job.opts.attempts).toBe(3);
+    expect(job.opts.attempts).toBe(5);
     expect(job.opts.backoff).toEqual({
       type: "exponential",
       delay: 2000,
