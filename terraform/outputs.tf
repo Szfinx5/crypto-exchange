@@ -13,9 +13,9 @@ output "application_url" {
   value       = "http://${aws_eip.app.public_ip}:3000"
 }
 
-output "status_url" {
+output "site_url" {
   description = "URL to check deployment status"
-  value       = "http://${aws_eip.app.public_ip}/status.html"
+  value       = "http://${aws_eip.app.public_ip}"
 }
 
 output "cloudwatch_logs" {
