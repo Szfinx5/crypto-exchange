@@ -18,7 +18,8 @@ Order processing system for cryptocurrency exchanges — featuring asynchronous 
 7. [Testing](#testing)  
 8. [CI/CD: GitHub Actions](#cicd-github-actions)  
 9. [AWS Infrastructure & IaC](#aws-infrastructure--iac)  
-10. [Final Notes](#final-notes)
+10. [Logging](#logging)
+11. [Final Notes](#final-notes)
 
 ---
 
@@ -311,6 +312,32 @@ flowchart TD
     EC2 --> CloudWatch[CloudWatch Logs]
 ```
 ---
+
+## Logging
+
+The deployment and application generate several logs, most of which are available both on the EC2 instance and in AWS CloudWatch (see your log group in the AWS Console).
+
+| Log File Path                | CloudWatch Stream Name Prefix | What You'll See                                                                                   |
+|-----------------------------|------------------------------|---------------------------------------------------------------------------------------------------|
+| `/var/log/user-data.log`     | `user-data-<instance-id>`    | Full output of the EC2 user data script: system setup, Docker install, config file creation, etc. |
+| `/var/log/update-deployment.log` | `update-deployment-<instance-id>` | Output from any deployment update scripts (e.g., SSM-triggered redeploys).                        |
+| `/var/log/worker.log`        | `worker-<instance-id>`       | All logs from the BullMQ worker processes (order queue, job processing, errors, retries, etc).    |
+| `/var/log/health-check.log`  | *(not in CloudWatch by default)* | Output from the periodic health check script (container status, restarts, app health).            |
+
+**How to use these logs:**
+- **user-data.log:** See the full provisioning and deployment process. If the app fails to start, check here for errors in Docker, Compose, or config.
+- **update-deployment.log:** When you trigger a redeploy (e.g., via CI/CD), this log shows the update process and any errors.
+- **worker.log:** All backend queue/worker activity, including job processing, errors, and retry attempts. Use this to debug order processing and queue issues.
+- **health-check.log:** (On the instance) Shows results of the health check script, including container restarts and HTTP health checks.
+
+**CloudWatch:**  
+All logs except `health-check.log` are shipped to CloudWatch under your deployment's log group. You can search, filter, and set up alerts in the AWS Console.
+
+**On the instance:**  
+All logs are also available in `/var/log/` and `/app/` (for health/status). Use AWS Session Manager or SSH to access them directly for advanced debugging.
+
+---
+
 ## Final Notes
 
 - Workers & Redis — Designed per BullMQ best practices.
