@@ -25,6 +25,10 @@ log "=== Installing CloudWatch agent... ==="
 wget https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
 rpm -U ./amazon-cloudwatch-agent.rpm
 
+# Create worker log file on host
+touch /var/log/worker.log
+chmod 666 /var/log/worker.log
+
 # Configure CloudWatch logs
 cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<EOF
 {
