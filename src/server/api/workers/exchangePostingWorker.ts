@@ -25,17 +25,27 @@ const statusRedis = new Redis(env.STATUS_REDIS_URL, {
 
 // Setting up logging for CloudWatch
 if (env.NODE_ENV !== "test") {
+  // Prevent double logging due to stdout/stderr hijack in worker
+  let lastLog = "";
+  const writeOnce = (chunk: any) => {
+    const str = typeof chunk === "string" ? chunk : chunk.toString();
+    if (str !== lastLog) {
+      logStream.write(str);
+      lastLog = str;
+    }
+  };
+
   const logStream = fs.createWriteStream("/var/log/worker.log", { flags: "a" });
 
   const origStdoutWrite = process.stdout.write.bind(process.stdout);
   const origStderrWrite = process.stderr.write.bind(process.stderr);
 
   process.stdout.write = (chunk: any, ...args: any[]) => {
-    logStream.write(chunk);
+    writeOnce(chunk);
     return origStdoutWrite(chunk, ...args);
   };
   process.stderr.write = (chunk: any, ...args: any[]) => {
-    logStream.write(chunk);
+    writeOnce(chunk);
     return origStderrWrite(chunk, ...args);
   };
 }
