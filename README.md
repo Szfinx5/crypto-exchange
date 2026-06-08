@@ -1,4 +1,4 @@
-# Apex Crypto Exchange Platform
+# Crypto Exchange Platform
 
 Order processing system for cryptocurrency exchanges — featuring asynchronous job queues, retry logic, and real-time status tracking.
 
@@ -6,7 +6,7 @@ Order processing system for cryptocurrency exchanges — featuring asynchronous 
 
 ## Live Demo
 
-**Working Demo:** [http://63.180.145.4](http://63.180.145.4)
+**Working Demo:** Currently suspended for cost management. I would be happy to reactivate on request.
 
 ## Quick Start: Deploy Your Own
 
