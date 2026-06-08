@@ -1,0 +1,75 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - development
+
+env:
+  AWS_REGION: eu-central-1
+  PUBLIC_ECR_URI: public.ecr.aws/q2z8v3n8/crypto-exchange
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build-image.outputs.image }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR Public
+      run: |
+        aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
+    - name: Build, tag, and push image to ECR
+      id: build-image
+      env:
+        PUBLIC_ECR_URI: ${{ env.PUBLIC_ECR_URI }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker build -f Dockerfile.prod -t $PUBLIC_ECR_URI:$IMAGE_TAG .
+        docker tag $PUBLIC_ECR_URI:$IMAGE_TAG $PUBLIC_ECR_URI:latest
+        docker push $PUBLIC_ECR_URI:$IMAGE_TAG
+        docker push $PUBLIC_ECR_URI:latest
+        echo "image=$PUBLIC_ECR_URI:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+  deploy-to-ec2:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Deploy to EC2 via SSM
+      env:
+        IMAGE_URI: ${{ needs.build-and-push.outputs.image }}
+      run: |
+        aws ssm send-command \
+          --document-name "AWS-RunShellScript" \
+          --targets "Key=tag:Name,Values=crypto-exchange-app" \
+          --parameters 'commands=[
+            "cd /app",
+            "echo \"=== Starting deployment: $(date) ===\" >> /var/log/update-deployment.log",
+            "echo \"New image: ${{ needs.build-and-push.outputs.image }}\" >> /var/log/update-deployment.log",
+            "docker-compose down >> /var/log/update-deployment.log 2>&1",
+            "docker image prune -f >> /var/log/update-deployment.log 2>&1",
+            "docker-compose pull --ignore-pull-failures >> /var/log/update-deployment.log 2>&1",
+            "docker-compose up -d --force-recreate >> /var/log/update-deployment.log 2>&1",
+            "docker ps >> /var/log/update-deployment.log 2>&1",
+            "echo \"=== Update complete: $(date) ===\" >> /var/log/update-deployment.log"
+          ]' \
+          --region ${{ env.AWS_REGION }}

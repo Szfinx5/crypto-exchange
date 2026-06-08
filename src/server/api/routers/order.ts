@@ -1,6 +1,8 @@
 import { createOrders } from "@server/api/services/createOrders";
 import { OrderInputSchema } from "@server/api/types/order";
+import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { getOrderStatus } from "../lib/orderRedis/getOrderStatus";
 
 export const orderRouter = createTRPCRouter({
 	create: publicProcedure
@@ -8,6 +10,14 @@ export const orderRouter = createTRPCRouter({
 		.mutation(async ({ input, ctx }) => {
 			const { redis } = ctx;
 			return createOrders(input, redis);
+		}),
+
+	getStatus: publicProcedure
+		.input(z.object({ orderId: z.string() }))
+		.query(async ({ input, ctx }) => {
+			const { redis } = ctx;
+			const status = await getOrderStatus(input.orderId, redis);
+			return { status };
 		}),
 
 	get: publicProcedure.query(() => {

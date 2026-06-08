@@ -1,75 +1,49 @@
 import { Status } from "@server/api/const/status";
 import { setOrderStatus } from "@server/api/lib/orderRedis/setOrderStatus";
 import type { Order, OrderInput } from "@server/api/types/order";
+import chalk from "chalk";
 import type { Redis } from "ioredis";
 import { createExchangePostingRequest } from "../lib/api/createExchangePostRequest";
-import { createExchangePosting } from "./exchangeCalls/exchangePosting";
-import { getCurrenciesFromMarket } from "../util/getCurrencies";
-import { createExecuteTransactionsRequest } from "../lib/api/createExecuteTransactionsRequest";
-import type { ExchangeOperation } from "../types/exchangeOperation";
-import { executeTransactions } from "./exchangeCalls/executeTransactions";
-import chalk from "chalk";
+import { exchangePostingQueue } from "../lib/queue";
+
+function getRandomUUID() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  // Fallback: RFC4122 version 4 compliant UUID
+return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+  const r = (Math.random() * 16) | 0;
+  const v = c === "x" ? r : (r & 0x3) | 0x8;
+  return v.toString(16);
+});
+}
 
 export const createOrders = async (input: OrderInput, redis: Redis) => {
-  const id = crypto.randomUUID();
-  const order: Order = { ...input, id, type: "market" };
-  const status = Status.PENDING;
-  await setOrderStatus(id, status, redis);
+	const id = getRandomUUID();
+	const order: Order = { ...input, id, type: "market" };
+	const status = Status.PENDING;
+	await setOrderStatus(id, status, redis);
 
-  /**
-   * TODO: make exchange posting and execute transactions resilient
-   * due to api call failures
-   * */
-  try {
-    const exchangePostingRequest = createExchangePostingRequest(order);
-    console.log(chalk.blue("createExchangePostingRequest"));
-    const exchangePostingResponse = await createExchangePosting(
-      exchangePostingRequest
-    );
-    console.log("exchangePostingResponse:", exchangePostingResponse);
-    if (exchangePostingResponse) {
-      console.log(chalk.green("exchangePostingResponse SUCCESS"));
-      const [sellerCurrency, buyerCurrency] = getCurrenciesFromMarket(
-        order.market
-      );
+	/**
+	 * TODO: make exchange posting and execute transactions resilient
+	 * due to api call failures
+	 * */
+	try {
+		const exchangePostingRequest = createExchangePostingRequest(order);
+		console.log(chalk.blue(`Creating order: ${id}`));
 
-      const seller: ExchangeOperation = {
-        amount: Number.parseFloat(exchangePostingResponse.filledSize),
-        userId: exchangePostingResponse.otherUserId,
-        currency: sellerCurrency,
-      };
-      const buyer: ExchangeOperation = {
-        amount: Number.parseFloat(exchangePostingResponse.filledFunds),
-        userId: exchangePostingResponse.buyerUserId,
-        currency: buyerCurrency,
-      };
-      const executeTransactionsRequestBody = createExecuteTransactionsRequest(
-        seller,
-        buyer
-      );
-      console.log(chalk.blue("executeTransactions"));
-      const executeTransactionsResponse = await executeTransactions(
-        executeTransactionsRequestBody
-      );
-      console.log("executeTransactionsResponse:", executeTransactionsResponse);
-      if (executeTransactionsResponse) {
-        console.log(chalk.green("executeTransactionsResponse SUCCESS"));
-        await setOrderStatus(id, Status.COMPLETED, redis);
-      } else {
-        console.log(
-          chalk.red("executeTransactions FAILED, Response: "),
-          executeTransactionsResponse
-        );
-        await setOrderStatus(id, Status.FAILED, redis);
-      }
-    } else {
-      console.log(chalk.red("exchangePostingResponse FAILED"));
-      await setOrderStatus(id, Status.FAILED, redis);
-    }
-  } catch (error) {
-    console.error(chalk.red("createOrders FAILED, Error: "), error);
-    await setOrderStatus(id, Status.FAILED, redis);
-    throw error;
-  }
-  return { order, status };
+		// Add job to the first queue
+		const job = await exchangePostingQueue.add("exchange-posting", {
+			orderId: id,
+			exchangePostingRequest,
+		});
+		console.log(
+			chalk.green(`Order ${id} queued for processing with job ID: ${job.id}`),
+		);
+	} catch (error) {
+		console.error(chalk.red("createOrders FAILED, Error: "), error);
+		await setOrderStatus(id, Status.FAILED, redis);
+		throw error;
+	}
+	return { order, status };
 };
